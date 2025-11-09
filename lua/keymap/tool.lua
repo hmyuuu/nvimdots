@@ -30,6 +30,12 @@ local mappings = {
 		["n|<leader>r"] = map_cu([[%SnipRun]]):with_noremap():with_silent():with_desc("tool: Run code by file"),
 
 		-- Plugin: iron.nvim
+		["n|<space>dt"] = map_callback(function()
+				_debug_ts_node()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("debug: Show treesitter node types"),
 		["n|<space>rr"] = map_cr("IronRepl"):with_noremap():with_silent():with_desc("repl: Toggle"),
 		["n|<space>rR"] = map_cr("IronRestart"):with_noremap():with_silent():with_desc("repl: Restart"),
 		["n|<space>rf"] = map_cr("IronFocus"):with_noremap():with_silent():with_desc("repl: Focus"),
@@ -76,6 +82,160 @@ local mappings = {
 			:with_noremap()
 			:with_silent()
 			:with_desc("repl: Send code block and move"),
+		["n|<space>sa"] = map_callback(function()
+				-- Smart send: try to find the appropriate code structure
+				local ts_utils = require("nvim-treesitter.ts_utils")
+				local node = ts_utils.get_node_at_cursor()
+
+				-- Try to find the parent function, struct, or other code block
+				local found = false
+				while node do
+					local node_type = node:type()
+					-- Julia treesitter node types (updated for actual tree-sitter-julia grammar)
+					if
+						vim.tbl_contains({
+							"function_definition",
+							"short_function_definition",
+							"struct_definition",
+							"macro_definition",
+							"let_statement",
+							"for_statement",
+							"while_statement",
+							"if_statement",
+							"try_statement",
+							"quote_statement",
+							"begin_statement",
+							"do_clause",
+						}, node_type)
+					then
+						-- Select the node and send it
+						ts_utils.update_selection(0, node)
+						vim.defer_fn(function()
+							require("iron.core").visual_send()
+						end, 10)
+						found = true
+						break
+					end
+					node = node:parent()
+				end
+
+				-- Fallback to sending paragraph if no structure found
+				if not found then
+					require("iron.core").send_paragraph()
+				end
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Smart send (auto-detect structure)"),
+		["n|<space><cr>"] = map_callback(function()
+				-- Smart send and move: auto-detect structure, send, then jump to next structure
+				local ts_utils = require("nvim-treesitter.ts_utils")
+				local node = ts_utils.get_node_at_cursor()
+
+				local target_types = {
+					"function_definition",
+					"short_function_definition",
+					"struct_definition",
+					"macro_definition",
+					"let_statement",
+					"for_statement",
+					"while_statement",
+					"if_statement",
+					"try_statement",
+					"quote_statement",
+					"begin_statement",
+					"do_clause",
+				}
+
+				-- Find the OUTERMOST matching structure (not the first one we encounter)
+				local outermost_node = nil
+				local current_node = node
+				while current_node do
+					local node_type = current_node:type()
+					if vim.tbl_contains(target_types, node_type) then
+						outermost_node = current_node
+					end
+					current_node = current_node:parent()
+				end
+
+				-- If we found an outermost structure, send it and move to next
+				if outermost_node then
+					-- Get the end position before selecting
+					local _, _, end_row, _ = outermost_node:range()
+
+					-- Select the node and send it
+					ts_utils.update_selection(0, outermost_node)
+					vim.defer_fn(function()
+						require("iron.core").visual_send()
+						-- Jump to next structure
+						-- Start searching from the line after current structure
+						local search_line = end_row + 2
+						local total_lines = vim.api.nvim_buf_line_count(0)
+
+						-- Find next structure
+						local next_found = false
+						for line = search_line, total_lines do
+							vim.api.nvim_win_set_cursor(0, { line, 0 })
+							local next_node = ts_utils.get_node_at_cursor()
+
+							-- Again, find the outermost structure at this position
+							local next_outermost = nil
+							while next_node do
+								if vim.tbl_contains(target_types, next_node:type()) then
+									next_outermost = next_node
+								end
+								next_node = next_node:parent()
+							end
+
+							if next_outermost then
+								local start_r, _, _, _ = next_outermost:range()
+								vim.api.nvim_win_set_cursor(0, { start_r + 1, 0 })
+								next_found = true
+								break
+							end
+						end
+
+						-- If no next structure found, go to end of buffer
+						if not next_found then
+							vim.api.nvim_win_set_cursor(0, { total_lines, 0 })
+						end
+					end, 10)
+				else
+					-- Fallback to sending paragraph and moving if no structure found
+					require("iron.core").send_paragraph()
+					vim.cmd("normal }")
+				end
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Smart send and move to next"),
+		["n|<space>saf"] = map_callback(function()
+				vim.cmd("normal vaf")
+				vim.defer_fn(function()
+					require("iron.core").visual_send()
+				end, 10)
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Send function (outer)"),
+		["n|<space>sif"] = map_callback(function()
+				vim.cmd("normal vif")
+				vim.defer_fn(function()
+					require("iron.core").visual_send()
+				end, 10)
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Send function (inner)"),
+		["n|<space>sac"] = map_callback(function()
+				vim.cmd("normal vac")
+				vim.defer_fn(function()
+					require("iron.core").visual_send()
+				end, 10)
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Send class/struct (outer)"),
 		["n|<space>s<cr>"] = map_callback(function()
 				require("iron.core").send_cr()
 			end)

@@ -196,3 +196,25 @@ _G._select_chat_model = function()
 		})
 		:find()
 end
+
+-- Debug helper to inspect treesitter node types
+_G._debug_ts_node = function()
+	local ts_utils = require("nvim-treesitter.ts_utils")
+	local node = ts_utils.get_node_at_cursor()
+
+	if not node then
+		vim.notify("No treesitter node at cursor", vim.log.levels.WARN, { title = "Treesitter Debug" })
+		return
+	end
+
+	local node_types = {}
+	local current = node
+	while current do
+		table.insert(node_types, current:type())
+		current = current:parent()
+	end
+
+	local msg = "Node types (innermost to outermost):\n" .. table.concat(node_types, "\n → ")
+	vim.notify(msg, vim.log.levels.INFO, { title = "Treesitter Debug" })
+	print(msg)
+end

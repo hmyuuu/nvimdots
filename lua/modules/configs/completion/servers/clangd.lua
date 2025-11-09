@@ -35,8 +35,7 @@ end
 
 -- https://github.com/neovim/nvim-lspconfig/blob/master/lua/lspconfig/configs/clangd.lua
 return function(options)
-	require("lspconfig").clangd.setup({
-		on_attach = options.on_attach,
+	local config = {
 		capabilities = vim.tbl_deep_extend("keep", { offsetEncoding = { "utf-16", "utf-8" } }, options.capabilities),
 		single_file_support = true,
 		cmd = {
@@ -75,5 +74,7 @@ return function(options)
 				description = "Open source/header in a new split",
 			},
 		},
-	})
+	}
+
+	vim.lsp.config("clangd", config)
 end
