@@ -218,3 +218,81 @@ _G._debug_ts_node = function()
 	vim.notify(msg, vim.log.levels.INFO, { title = "Treesitter Debug" })
 	print(msg)
 end
+
+-- Helper for iron.nvim: smart send code structures to REPL
+_G._iron_smart_send = function(opts)
+	opts = opts or {}
+	local move_to_next = opts.move_to_next or false
+
+	local ts_utils = require("nvim-treesitter.ts_utils")
+
+	local target_types = {
+		"function_definition",
+		"short_function_definition",
+		"struct_definition",
+		"macro_definition",
+		"let_statement",
+		"for_statement",
+		"while_statement",
+		"if_statement",
+		"try_statement",
+		"quote_statement",
+		"begin_statement",
+		"do_clause",
+	}
+
+	-- Helper function to find outermost matching structure from a node
+	local function find_outermost(start_node)
+		local outermost = nil
+		local current = start_node
+		while current do
+			if vim.tbl_contains(target_types, current:type()) then
+				outermost = current
+			end
+			current = current:parent()
+		end
+		return outermost
+	end
+
+	local node = ts_utils.get_node_at_cursor()
+	local outermost_node = find_outermost(node)
+
+	if outermost_node then
+		local _, _, end_row, _ = outermost_node:range()
+		ts_utils.update_selection(0, outermost_node)
+
+		vim.defer_fn(function()
+			require("iron.core").visual_send()
+
+			if move_to_next then
+				-- Jump to next structure
+				local search_line = end_row + 2
+				local total_lines = vim.api.nvim_buf_line_count(0)
+				local next_found = false
+
+				for line = search_line, total_lines do
+					vim.api.nvim_win_set_cursor(0, { line, 0 })
+					local next_node = ts_utils.get_node_at_cursor()
+					local next_outermost = find_outermost(next_node)
+
+					if next_outermost then
+						local start_r, _, _, _ = next_outermost:range()
+						vim.api.nvim_win_set_cursor(0, { start_r + 1, 0 })
+						next_found = true
+						break
+					end
+				end
+
+				if not next_found then
+					vim.api.nvim_win_set_cursor(0, { total_lines, 0 })
+				end
+			end
+		end, 10)
+	else
+		-- Fallback to sending paragraph
+		require("iron.core").send_paragraph()
+		if move_to_next then
+			vim.cmd("normal }")
+		end
+	end
+end
