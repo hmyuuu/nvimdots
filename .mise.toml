@@ -1,0 +1,6 @@
+# mise configuration for ecce project
+# Environment variables set by ecce tool
+
+[env]
+ANTHROPIC_BASE_URL = "https://anyrouter.top"
+ANTHROPIC_API_KEY = "sk-W0LaUjT1yIA7ODokOrYNjsvNuveW04W6WZDW2A6yOrqL4ee6"

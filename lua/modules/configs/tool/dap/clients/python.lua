@@ -4,7 +4,13 @@ return function()
 	local dap = require("dap")
 	local utils = require("modules.utils.dap")
 	local is_windows = require("core.global").is_windows
-	local debugpy_root = require("mason-registry").get_package("debugpy"):get_install_path()
+
+	-- Try to get debugpy path from mason
+	local debugpy_root
+	local ok, mason_registry = pcall(require, "mason-registry")
+	if ok and mason_registry.is_installed("debugpy") then
+		debugpy_root = mason_registry.get_package("debugpy"):get_install_path()
+	end
 
 	dap.adapters.python = function(callback, config)
 		if config.request == "attach" then
@@ -17,15 +23,24 @@ return function()
 				options = { source_filetype = "python" },
 			})
 		else
+			-- Use mason debugpy if available, otherwise use system python
+			local command
+			if debugpy_root then
+				command = is_windows and debugpy_root .. "/venv/Scripts/pythonw.exe"
+					or debugpy_root .. "/venv/bin/python"
+			else
+				command = is_windows and "pythonw.exe" or "python3"
+			end
+
 			callback({
 				type = "executable",
-				command = is_windows and debugpy_root .. "/venv/Scripts/pythonw.exe"
-					or debugpy_root .. "/venv/bin/python",
+				command = command,
 				args = { "-m", "debugpy.adapter" },
 				options = { source_filetype = "python" },
 			})
 		end
 	end
+
 	dap.configurations.python = {
 		{
 			-- The first three options are required by nvim-dap

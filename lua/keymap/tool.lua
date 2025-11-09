@@ -29,6 +29,78 @@ local mappings = {
 		["v|<leader>r"] = map_cr("SnipRun"):with_noremap():with_silent():with_desc("tool: Run code by range"),
 		["n|<leader>r"] = map_cu([[%SnipRun]]):with_noremap():with_silent():with_desc("tool: Run code by file"),
 
+		-- Plugin: iron.nvim
+		["n|<space>rr"] = map_cr("IronRepl"):with_noremap():with_silent():with_desc("repl: Toggle"),
+		["n|<space>rR"] = map_cr("IronRestart"):with_noremap():with_silent():with_desc("repl: Restart"),
+		["n|<space>rf"] = map_cr("IronFocus"):with_noremap():with_silent():with_desc("repl: Focus"),
+		["n|<space>rh"] = map_cr("IronHide"):with_noremap():with_silent():with_desc("repl: Hide"),
+		["n|<space>sc"] = map_callback(function()
+				require("iron.core").send_motion()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Send motion"),
+		["v|<space>sc"] = map_callback(function()
+				require("iron.core").visual_send()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Send visual"),
+		["n|<space>sl"] = map_callback(function()
+				require("iron.core").send_line()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Send line"),
+		["n|<space>sf"] = map_callback(function()
+				require("iron.core").send_file()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Send file"),
+		["n|<space>sp"] = map_callback(function()
+				require("iron.core").send_paragraph()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Send paragraph"),
+		["n|<space>sb"] = map_callback(function()
+				require("iron.core").send_code_block()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Send code block"),
+		["n|<space>sn"] = map_callback(function()
+				require("iron.core").send_code_block_and_move()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Send code block and move"),
+		["n|<space>s<cr>"] = map_callback(function()
+				require("iron.core").send_cr()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Send CR"),
+		["n|<space>s<space>"] = map_callback(function()
+				require("iron.core").send_interrupt()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Interrupt"),
+		["n|<space>sq"] = map_callback(function()
+				require("iron.core").close_repl()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Exit"),
+		["n|<space>cl"] = map_callback(function()
+				require("iron.core").send_clear()
+			end)
+			:with_noremap()
+			:with_silent()
+			:with_desc("repl: Clear"),
+
 		-- Plugin: toggleterm
 		["t|<Esc><Esc>"] = map_cmd([[<C-\><C-n>]]):with_noremap():with_silent(), -- switch to normal mode in terminal.
 		["n|<C-\\>"] = map_cr("ToggleTerm direction=horizontal")
@@ -266,6 +338,23 @@ local mappings = {
 			:with_noremap()
 			:with_silent()
 			:with_desc("tool: Add selection to CodeCompanion Chat"),
+
+		-- Plugin: claudecode
+		["n|<leader>ac"] = map_cr("ClaudeCode"):with_noremap():with_silent():with_desc("tool: Toggle Claude"),
+		["n|<leader>af"] = map_cr("ClaudeCodeFocus"):with_noremap():with_silent():with_desc("tool: Focus Claude"),
+		["n|<leader>ar"] = map_cr("ClaudeCode --resume"):with_noremap():with_silent():with_desc("tool: Resume Claude"),
+		["n|<leader>aC"] = map_cr("ClaudeCode --continue")
+			:with_noremap()
+			:with_silent()
+			:with_desc("tool: Continue Claude"),
+		["n|<leader>am"] = map_cr("ClaudeCodeSelectModel")
+			:with_noremap()
+			:with_silent()
+			:with_desc("tool: Select Claude model"),
+		["n|<leader>ab"] = map_cr("ClaudeCodeAdd %"):with_noremap():with_silent():with_desc("tool: Add current buffer"),
+		["v|<leader>as"] = map_cr("ClaudeCodeSend"):with_noremap():with_silent():with_desc("tool: Send to Claude"),
+		["n|<leader>aa"] = map_cr("ClaudeCodeDiffAccept"):with_noremap():with_silent():with_desc("tool: Accept diff"),
+		["n|<leader>ad"] = map_cr("ClaudeCodeDiffDeny"):with_noremap():with_silent():with_desc("tool: Deny diff"),
 	},
 }
 

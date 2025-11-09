@@ -44,6 +44,11 @@ tool["michaelb/sniprun"] = {
 	cmd = { "SnipRun", "SnipReset", "SnipInfo" },
 	config = require("tool.sniprun"),
 }
+tool["Vigemus/iron.nvim"] = {
+	lazy = true,
+	event = "BufReadPost",
+	config = require("tool.iron"),
+}
 tool["akinsho/toggleterm.nvim"] = {
 	lazy = true,
 	cmd = {
@@ -80,6 +85,12 @@ if settings.use_chat then
 		dependencies = {
 			{ "ravitemer/codecompanion-history.nvim" },
 		},
+	}
+	tool["coder/claudecode.nvim"] = {
+		lazy = true,
+		event = "VeryLazy",
+		config = true,
+		dependencies = { "folke/snacks.nvim" },
 	}
 end
 if settings.search_backend == "fzf" then
@@ -153,7 +164,32 @@ tool["mfussenegger/nvim-dap"] = {
 			},
 		},
 		{ "jay-babu/mason-nvim-dap.nvim" },
+		{ "theHamsta/nvim-dap-virtual-text" },
+		{
+			"kdheepak/nvim-dap-julia",
+			config = function()
+				require("nvim-dap-julia").setup()
+			end,
+		},
 	},
+}
+
+tool["sourcegraph/amp.nvim"] = {
+	branch = "main",
+	lazy = false,
+	opts = { auto_start = true, log_level = "info" },
+}
+
+tool["swaits/zellij-nav.nvim"] = {
+	lazy = true,
+	event = "VeryLazy",
+	keys = {
+		{ "<c-h>", "<cmd>ZellijNavigateLeftTab<cr>", { silent = true, desc = "navigate left or tab" } },
+		{ "<c-j>", "<cmd>ZellijNavigateDown<cr>", { silent = true, desc = "navigate down" } },
+		{ "<c-k>", "<cmd>ZellijNavigateUp<cr>", { silent = true, desc = "navigate up" } },
+		{ "<c-l>", "<cmd>ZellijNavigateRightTab<cr>", { silent = true, desc = "navigate right or tab" } },
+	},
+	opts = {},
 }
 
 return tool

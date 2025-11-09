@@ -84,6 +84,90 @@ _G._toggle_lazygit = function()
 	end
 end
 
+local _repl_terminals = {}
+_G._toggle_repl = function()
+	-- Detect which REPL to use based on filetype
+	local filetype = vim.bo.filetype
+	local repl_cmd = nil
+	local repl_name = nil
+
+	if filetype == "julia" then
+		if vim.fn.executable("julia") == 1 then
+			repl_cmd = "julia"
+			repl_name = "Julia REPL"
+		end
+	elseif filetype == "python" then
+		if vim.fn.executable("ipython") == 1 then
+			repl_cmd = "ipython"
+			repl_name = "IPython"
+		elseif vim.fn.executable("python") == 1 then
+			repl_cmd = "python"
+			repl_name = "Python REPL"
+		end
+	elseif filetype == "lua" then
+		repl_cmd = "lua"
+		repl_name = "Lua REPL"
+	elseif filetype == "r" then
+		if vim.fn.executable("R") == 1 then
+			repl_cmd = "R"
+			repl_name = "R Console"
+		end
+	else
+		-- Default to bash/shell
+		repl_cmd = vim.o.shell
+		repl_name = "Shell"
+	end
+
+	if repl_cmd then
+		-- Store the source buffer to configure slime later
+		local source_buf = vim.api.nvim_get_current_buf()
+
+		-- Create a REPL terminal for this filetype if it doesn't exist
+		if not _repl_terminals[filetype] then
+			_repl_terminals[filetype] = require("toggleterm.terminal").Terminal:new({
+				cmd = repl_cmd,
+				direction = "vertical",
+				close_on_exit = true,
+				hidden = true,
+				on_open = function(term)
+					-- Configure vim-slime to use this terminal
+					vim.schedule(function()
+						-- Set slime config for the source buffer with the terminal's channel ID
+						local ok, chan_id = pcall(vim.api.nvim_buf_get_var, term.bufnr, "terminal_job_id")
+						if ok and chan_id then
+							vim.api.nvim_buf_set_var(source_buf, "slime_config", { jobid = chan_id })
+							vim.notify(
+								string.format("Opened %s (jobid: %s)", repl_name, chan_id),
+								vim.log.levels.INFO,
+								{ title = "REPL" }
+							)
+						else
+							vim.notify("Failed to get terminal job ID", vim.log.levels.WARN, { title = "REPL" })
+						end
+					end)
+				end,
+			})
+		end
+
+		-- Toggle and ensure config is set if opening
+		local term = _repl_terminals[filetype]
+		local was_open = term:is_open()
+		term:toggle()
+
+		-- If terminal is now open and wasn't before, set config
+		if not was_open and term:is_open() then
+			vim.schedule(function()
+				local ok, chan_id = pcall(vim.api.nvim_buf_get_var, term.bufnr, "terminal_job_id")
+				if ok and chan_id then
+					vim.api.nvim_buf_set_var(source_buf, "slime_config", { jobid = chan_id })
+				end
+			end)
+		end
+	else
+		vim.notify("No REPL found for filetype: " .. filetype, vim.log.levels.ERROR, { title = "REPL" })
+	end
+end
+
 _G._select_chat_model = function()
 	local actions = require("telescope.actions")
 	local action_state = require("telescope.actions.state")
